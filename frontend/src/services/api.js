@@ -257,3 +257,24 @@ export async function saveSupabaseConfig(url, key) {
   if (!res.ok) throw new Error('Failed to save Supabase configuration');
   return res.json();
 }
+
+
+export async function executeSystemCommand(command) {
+  const res = await fetch(`${API_BASE}/tools/execute_command`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ command })
+  });
+  if (!res.ok) throw new Error('Command execution failed');
+  return res.json();
+}
+
+export async function launchApp(appName) {
+  const res = await fetch(`${API_BASE}/tools/launch_app`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ app_name: appName })
+  });
+  if (!res.ok) throw new Error('Failed to launch application');
+  return res.json();
+}

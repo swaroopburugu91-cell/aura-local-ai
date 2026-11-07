@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Copy, Check, Terminal } from 'lucide-react';
+import { Copy, Check, Terminal, Play, Loader2 } from 'lucide-react';
+import { executeSystemCommand } from '../services/api';
 
 export default function MarkdownRenderer({ content = '', isStreaming = false }) {
   if (!content) return null;
@@ -46,11 +47,27 @@ export default function MarkdownRenderer({ content = '', isStreaming = false }) 
 
 function CodeBlock({ lang, code }) {
   const [copied, setCopied] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [executionResult, setExecutionResult] = useState(null);
+
+  const isExecutable = ['powershell', 'ps1', 'bash', 'sh', 'cmd', 'shell', 'terminal', 'batch'].includes(lang.toLowerCase());
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRun = async () => {
+    setIsRunning(true);
+    try {
+      const res = await executeSystemCommand(code);
+      setExecutionResult(res);
+    } catch (err) {
+      setExecutionResult({ success: false, stderr: err.message, stdout: "" });
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   return (
@@ -61,29 +78,77 @@ function CodeBlock({ lang, code }) {
           <Terminal size={14} className="text-[#7cacf8]" />
           <span className="uppercase tracking-wider font-semibold text-[#c4c7c5]">{lang}</span>
         </div>
-        <button
-          onClick={handleCopy}
-          className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-[#1e1f20] hover:bg-[#333537] text-[#e3e3e3] transition-colors"
-          title="Copy code to clipboard"
-        >
-          {copied ? (
-            <>
-              <Check size={13} className="text-emerald-400" />
-              <span className="text-emerald-400 font-medium">Copied!</span>
-            </>
-          ) : (
-            <>
-              <Copy size={13} />
-              <span>Copy code</span>
-            </>
+        <div className="flex items-center space-x-2">
+          {/* Run on Laptop Button for Terminal / Shell commands */}
+          {isExecutable && (
+            <button
+              onClick={handleRun}
+              disabled={isRunning}
+              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 transition-colors"
+              title="Execute this command directly on your laptop"
+            >
+              {isRunning ? (
+                <>
+                  <Loader2 size={13} className="animate-spin text-emerald-400" />
+                  <span>Running...</span>
+                </>
+              ) : (
+                <>
+                  <Play size={12} className="fill-current text-emerald-400" />
+                  <span>Run on Laptop</span>
+                </>
+              )}
+            </button>
           )}
-        </button>
+
+          {/* Copy Button */}
+          <button
+            onClick={handleCopy}
+            className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-[#1e1f20] hover:bg-[#333537] text-[#e3e3e3] transition-colors"
+            title="Copy code to clipboard"
+          >
+            {copied ? (
+              <>
+                <Check size={13} className="text-emerald-400" />
+                <span className="text-emerald-400 font-medium">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy size={13} />
+                <span>Copy code</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Code Content */}
       <pre className="p-4 overflow-x-auto text-[13.5px] font-mono leading-normal text-[#e3e3e3] bg-[#131314]">
         <code>{code}</code>
       </pre>
+
+      {/* Live System Execution Output Box */}
+      {executionResult && (
+        <div className="border-t border-[#333537] bg-[#0c0d0e] p-3 text-xs font-mono">
+          <div className="flex items-center justify-between pb-1.5 border-b border-[#282a2c] text-[#9aa0a6]">
+            <span className="flex items-center gap-1.5 font-semibold">
+              <span className={`w-2 h-2 rounded-full ${executionResult.success ? 'bg-emerald-400' : 'bg-red-400'}`} />
+              Terminal Result ({executionResult.success ? "Exit Code 0" : `Exit Code ${executionResult.exit_code}`})
+            </span>
+            <button
+              onClick={() => setExecutionResult(null)}
+              className="text-[11px] text-[#7cacf8] hover:underline"
+            >
+              Dismiss
+            </button>
+          </div>
+          <pre className={`mt-2 p-2 rounded bg-[#131314] whitespace-pre-wrap overflow-x-auto max-h-48 text-[12.5px] ${
+            executionResult.success ? 'text-emerald-200' : 'text-red-300'
+          }`}>
+            {executionResult.stdout || executionResult.stderr || "(Command completed with no output)"}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }

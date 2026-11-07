@@ -32,6 +32,14 @@ from app.inference import inference_manager
 from app.rag import extract_text_from_file, chunk_text, search_relevant_chunks, build_rag_prompt
 from app.audio import transcribe_audio_file
 from app.supabase_client import supabase_manager
+from app.tools import (
+    execute_shell_command,
+    list_folder_contents,
+    read_laptop_file,
+    write_laptop_file,
+    launch_desktop_application,
+    SYSTEM_TOOLS_SCHEMA
+)
 
 # Initialize database on startup
 init_db()
@@ -350,6 +358,44 @@ def set_supabase_config(cfg: SupabaseConfig):
         "success": True,
         "configured": supabase_manager.is_configured()
     }
+
+# --- OS Automation & Computer Control Endpoints ---
+
+class ExecCommandRequest(BaseModel):
+    command: str
+
+class ListFilesRequest(BaseModel):
+    folder_path: Optional[str] = None
+
+class ReadFileRequest(BaseModel):
+    file_path: str
+
+class WriteFileRequest(BaseModel):
+    file_path: str
+    content: str
+
+class LaunchAppRequest(BaseModel):
+    app_name: str
+
+@app.post("/api/tools/execute_command")
+def api_execute_command(req: ExecCommandRequest):
+    return execute_shell_command(req.command)
+
+@app.post("/api/tools/list_files")
+def api_list_files(req: ListFilesRequest):
+    return list_folder_contents(req.folder_path)
+
+@app.post("/api/tools/read_file")
+def api_read_file(req: ReadFileRequest):
+    return read_laptop_file(req.file_path)
+
+@app.post("/api/tools/write_file")
+def api_write_file(req: WriteFileRequest):
+    return write_laptop_file(req.file_path, req.content)
+
+@app.post("/api/tools/launch_app")
+def api_launch_app(req: LaunchAppRequest):
+    return launch_desktop_application(req.app_name)
 
 # --- Audio Transcription Endpoint ---
 
