@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Aura Unified Server",
+      "type": "shell",
+      "command": "C:\\Users\\swaro\\AppData\\Local\\Programs\\Python\\Python314\\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Run Automated Test Suite",
+      "type": "shell",
+      "command": "C:\\Users\\swaro\\AppData\\Local\\Programs\\Python\\Python314\\python.exe test_suite.py",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

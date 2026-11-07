@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🚀 Aura: Run Unified Server (F5)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/app/main.py",
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/backend"
+      }
+    },
+    {
+      "name": "🖥️ Aura: Run Desktop App Window",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/desktop_app.py",
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/backend"
+      }
+    },
+    {
+      "name": "🧪 Aura: Run Test Suite",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/test_suite.py",
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal"
+    }
+  ]
+}
