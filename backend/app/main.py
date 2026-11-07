@@ -40,6 +40,7 @@ from app.tools import (
     launch_desktop_application,
     SYSTEM_TOOLS_SCHEMA
 )
+from app.autonomous_agent import handle_direct_system_intent, execute_action_tag
 
 # Initialize database on startup
 init_db()
@@ -209,6 +210,22 @@ async def chat_stream(req: ChatRequest):
             title = title[:27] + "..."
         update_conversation(req.conversation_id, title=title)
 
+    # 1. Direct Autonomous Action Interception
+    direct_action = handle_direct_system_intent(req.message)
+    if direct_action:
+        async def direct_event_generator():
+            msg_content = direct_action["message"]
+            yield f"data: {json.dumps({'content': msg_content, 'done': False})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'eval_count': 30})}\n\n"
+            asst_rec = add_message(
+                cid=req.conversation_id,
+                role="assistant",
+                content=msg_content,
+                tokens=30
+            )
+            supabase_manager.sync_message(asst_rec)
+        return StreamingResponse(direct_event_generator(), media_type="text/event-stream")
+
     # RAG Grounding: search indexed chunks if enabled
     prompt_to_send = req.message
     grounded_sources = []
@@ -255,8 +272,14 @@ async def chat_stream(req: ChatRequest):
                     if content_piece:
                         full_response.append(content_piece)
                     if payload.get("done"):
-                        # Save completed assistant response to SQLite
+                        # Check for autonomous action tags and execute them directly
                         final_text = "".join(full_response)
+                        cleaned_final, action_info = execute_action_tag(final_text)
+                        if action_info:
+                            extra_output = cleaned_final[len(final_text):] if len(cleaned_final) > len(final_text) else cleaned_final
+                            yield f"data: {json.dumps({'content': extra_output, 'done': False})}\n\n"
+                            final_text = cleaned_final
+
                         if final_text.strip():
                             asst_rec = add_message(
                                 cid=req.conversation_id,
