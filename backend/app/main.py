@@ -433,6 +433,14 @@ async def transcribe_audio(file: UploadFile = File(...)):
         temp_path.unlink()
     return result
 
+# --- Project Download Endpoint ---
+@app.get("/api/download/zip")
+def download_project_zip():
+    zip_path = Path(r"C:\Users\swaro\Downloads\Aura-Local-AI-Full-Project.zip")
+    if zip_path.exists():
+        return FileResponse(zip_path, filename="Aura-Local-AI-Full-Project.zip", media_type="application/zip")
+    raise HTTPException(status_code=404, detail="ZIP archive not found")
+
 # --- Mount Static Frontend Build (if present) ---
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 if FRONTEND_DIST.exists():
